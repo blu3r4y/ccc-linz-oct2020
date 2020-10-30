@@ -5,12 +5,12 @@ from contest import solve
 
 
 def load(data):
-    return {"data": data}
+    return {"price": list(map(int, data[1:]))}
 
 
 if __name__ == "__main__":
-    level, quests = 0, 5
-    for q in range(1, quests + 1):
+    level, quests = 1, 5
+    for q in range(0, quests + 1):
         input_file = r'..\data\level{0}\level{0}_{1}.in'.format(level, q)
         output_file = os.path.splitext(input_file)[0] + ".out"
 

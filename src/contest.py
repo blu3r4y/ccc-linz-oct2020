@@ -1,2 +1,5 @@
+import numpy as np
+
+
 def solve(data):
-    return ""
+    return str(np.argmin(data["price"]))
