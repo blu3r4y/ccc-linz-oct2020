@@ -8,26 +8,28 @@ from constants import *
 def load(data):
     max_power = int(data[0])
     max_bill = int(data[1])
-    n = int(data[2])
-    m = int(data[3 + n])
+    max_concurrent = int(data[2])
+    n = int(data[3])
+    m = int(data[4 + n])
 
-    prices = list(map(int, data[3:n + 3]))
+    prices = list(map(int, data[4:n + 4]))
     tasks = [
         Task(id=int(e.split()[0]),
              power=int(e.split()[1]),
              start=int(e.split()[2]),
              end=int(e.split()[3]))
-        for e in data[n + 4:n + 4 + m]
+        for e in data[n + 5:n + 5 + m]
     ]
 
     return Data(max_power=max_power,
                 max_bill=max_bill,
+                max_concurrent=max_concurrent,
                 prices=prices,
                 tasks=tasks)
 
 
 if __name__ == "__main__":
-    level, quests = 4, 5
+    level, quests = 5, 5
     for q in range(0, quests + 1):
         if q == 0:
             q = "example"
