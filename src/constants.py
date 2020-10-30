@@ -1,3 +1,8 @@
 from collections import namedtuple
 
-Task = namedtuple('Task', ['id', 'power', "start", "end"])
+Data = namedtuple("Data", ["max_power", "max_bill", "prices", "tasks"])
+Task = namedtuple("Task", ["id", "power", "start", "end"])
+
+# output structures
+DrainPower = namedtuple("DrainPower", ["minute", "power"])
+DrainTask = namedtuple("DrainTask", ["id", "drains"])
