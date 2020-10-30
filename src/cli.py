@@ -2,15 +2,31 @@ import os
 from pprint import pprint
 
 from contest import solve
+from constants import *
 
 
 def load(data):
-    return {"price": list(map(int, data[1:]))}
+    n = int(data[0])
+    m = int(data[1 + n])
+
+    prices = list(map(int, data[1:n + 1]))
+    tasks = [
+        Task(id=int(e.split()[0]), completion_time=int(e.split()[1]))
+        for e in data[n + 2:n + 2 + m]
+    ]
+
+    return {
+        "prices": prices,
+        "tasks": tasks
+    }
 
 
 if __name__ == "__main__":
-    level, quests = 1, 5
+    level, quests = 2, 5
     for q in range(0, quests + 1):
+        if q == 0:
+            q = "example"
+
         input_file = r'..\data\level{0}\level{0}_{1}.in'.format(level, q)
         output_file = os.path.splitext(input_file)[0] + ".out"
 
