@@ -29,8 +29,8 @@ def load(data):
 
 
 if __name__ == "__main__":
-    level, quests = 5, 5
-    for q in range(0, quests + 1):
+    level, quests = 6, 5
+    for q in range(5, quests + 1):
         if q == 0:
             q = "example"
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
             print("======================")
 
             result = solve(data)
-            pprint(result)
+            # pprint(result)
 
             with open(output_file, 'w+') as fo:
                 fo.write(result)

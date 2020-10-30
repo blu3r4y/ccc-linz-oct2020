@@ -1,43 +1,71 @@
-import numpy as np
 from pprint import pprint
+
+import numpy as np
+import random
 
 from constants import *
 
 
 def solve(data: Data):
-    prices = np.array(data.prices)
+    prices = np.array(data.prices, dtype=np.float64)
 
-    result: [DrainTask] = {t.id: DrainTask(t.id, []) for t in data.tasks}
+    result: [DrainTask] = {t.id: DrainTask(t.id, {}) for t in data.tasks}
 
     # store drained power per minute
-    powers = np.zeros(len(data.prices), dtype=int)
+    powers = np.zeros(len(data.prices), dtype=np.int)
     # and number of tasks already assigned per minute
-    ntasks = np.zeros(len(data.prices), dtype=int)
+    ntasks = np.zeros(len(data.prices), dtype=np.int)
 
     # start with most peaky tasks
     tasks = sorted(data.tasks, key=lambda t: t.end - t.start)
     for task in tasks:
-        price_window = prices[task.start:task.end + 1]  # we can drain from this area
+        # we can only drain from this area
+        price_window = prices[task.start:task.end + 1].copy()
+        width = task.end - task.start
 
         # fill power hunger
         filled = 0
+        chosen = set()
         while filled < task.power:
-            cheapest_index = np.argmin(price_window) + task.start
-            if powers[cheapest_index] <= data.max_power:
-                # how much power do we need and can we drain at a maximum here?
-                leftover = task.power - filled
-                amount = min(data.max_power - powers[cheapest_index], leftover)
 
-                # okay, let's drain it
-                powers[cheapest_index] += amount
-                ntasks[cheapest_index] += 1
-                result[task.id].drains.append(DrainPower(cheapest_index, amount))
-                filled += amount
+            # find the cheapest index
+            assert np.any(np.isfinite(price_window))
+            idx = np.nanargmin(price_window) + task.start
 
-                # is this minute now exhausted?
-                if powers[cheapest_index] == data.max_power \
-                        or ntasks[cheapest_index] == data.max_concurrent:
-                    prices[cheapest_index] = 1e8  # ... make sure this price is never chosen again
+            # we still got some power and tasks left to fill here
+            assert powers[idx] < data.max_power
+            assert ntasks[idx] < data.max_concurrent
+
+            # how much power do we need and can we drain at a maximum here?
+            leftover = task.power - filled
+            limit = int(0.2 * data.max_power)
+            amount = min(data.max_power - powers[idx], leftover, limit)
+
+            assert amount > 0
+
+            # okay, let's drain that amount
+            powers[idx] += amount
+            filled += amount
+            if idx in chosen:
+                # overwrite existing indexes
+                existing = result[task.id].drains[idx]
+                result[task.id].drains[idx] = DrainPower(idx, existing.power + amount)
+            else:
+                # create new indexes
+                ntasks[idx] += 1
+                result[task.id].drains[idx] = DrainPower(idx, amount)
+                chosen.add(idx)
+
+            if width > 100:
+                price_window[idx - task.start] = np.nan
+
+            # is this minute now exhausted?
+            if powers[idx] >= data.max_power \
+                    or ntasks[idx] >= data.max_concurrent:
+                prices[idx] = np.nan
+                price_window[idx - task.start] = np.nan
+
+        assert filled == task.power
 
     # convert to list
     result = result.values()
@@ -46,27 +74,36 @@ def solve(data: Data):
 
     # format output
     output = "{}\n".format(len(result))
-    output += "\n".join(["{} {}".format(t.id, " ".join(["{} {}".format(d.minute, d.power) for d in t.drains]))
+    output += "\n".join(["{} {}".format(t.id, " ".join(["{} {}".format(d.minute, d.power) for d in t.drains.values()]))
                          for t in result])
     return output
 
 
 def check_constraints(data: Data, result: [DrainTask], verbose=False):
     # check per minute and max-task constraint
-    powers = np.zeros(len(data.prices), dtype=int)
-    ntasks = np.zeros(len(data.prices), dtype=int)
+    powers = np.zeros(len(data.prices), dtype=np.int)
+    ntasks = np.zeros(len(data.prices), dtype=np.int)
     for task in result:
-        for drain in task.drains:
+        used_minutes_for_task = []
+        for drain in task.drains.values():
             powers[drain.minute] += drain.power
             ntasks[drain.minute] += 1
+            used_minutes_for_task.append(drain.minute)
+
+        # assert that we do not use something twice (should really not happen)
+        if len(set(used_minutes_for_task)) != len(used_minutes_for_task):
+            pprint(task)
+            assert len(set(used_minutes_for_task)) == len(used_minutes_for_task)
+
+    assert len(data.prices) == powers.shape[0]
 
     # check electricity bill
-    bill = np.sum(powers * np.array(data.prices))
+    bill = np.sum(powers * np.rint(np.array(data.prices) * (1.0 + (powers / data.max_power))))
 
     if verbose:
         print("prices: {}".format(data.prices))
-        print("powers: {}".format(powers))
-        print("ntasks: {}".format(ntasks))
+        print("powers: {}".format(powers.tolist()))
+        print("ntasks: {}".format(ntasks.tolist()))
         print("bill: {}".format(bill))
 
     assert np.all(powers <= data.max_power)
