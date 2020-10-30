@@ -1,3 +1,3 @@
 from collections import namedtuple
 
-Task = namedtuple('Task', ['id', 'completion_time'])
+Task = namedtuple('Task', ['id', 'power', "start", "end"])

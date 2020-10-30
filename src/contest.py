@@ -7,9 +7,9 @@ def solve(data):
     start_times = []
 
     for task in data["tasks"]:
-        window = sliding_window(prices, task.completion_time)
-        start_id = np.argmin(window)
-        start_times.append("{} {}".format(task.id, start_id))
+        window = prices[task.start:task.end + 1]
+        start_id = np.argmin(window) + task.start
+        start_times.append("{} {} {}".format(task.id, start_id, task.power))
 
     return "{}\n".format(len(start_times)) + "\n".join(start_times)
 

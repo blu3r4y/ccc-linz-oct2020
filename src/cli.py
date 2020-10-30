@@ -11,7 +11,10 @@ def load(data):
 
     prices = list(map(int, data[1:n + 1]))
     tasks = [
-        Task(id=int(e.split()[0]), completion_time=int(e.split()[1]))
+        Task(id=int(e.split()[0]),
+             power=int(e.split()[1]),
+             start=int(e.split()[2]),
+             end=int(e.split()[3]))
         for e in data[n + 2:n + 2 + m]
     ]
 
@@ -22,7 +25,7 @@ def load(data):
 
 
 if __name__ == "__main__":
-    level, quests = 2, 5
+    level, quests = 3, 5
     for q in range(0, quests + 1):
         if q == 0:
             q = "example"
